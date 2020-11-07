@@ -2,6 +2,7 @@ const router = require('express').Router()
 const User = require('./models/user')
 const validateUserBody = require('./middleware/validateUserBody')
 const token = require('./utils/token')
+const store = require('./utils/store')
 
 const isSecure = process.env.NODE_ENV === 'production'
 
@@ -16,6 +17,7 @@ router.post('/login', validateUserBody, async (req, res) => {
       secure: isSecure,
       httpOnly: true,
     })
+    await store.setRefreshToken(refreshToken)
     return res.json(user)
   } catch (err) {
     if (err.message === 'incorrect email or password') {
@@ -35,6 +37,7 @@ router.post('/register', validateUserBody, async (req, res) => {
       secure: isSecure,
       httpOnly: true,
     })
+    await store.setRefreshToken(refreshToken)
     return res.status(201).json(user)
   } catch (err) {
     if (err.code === 11000) {
