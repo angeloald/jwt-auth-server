@@ -1,15 +1,29 @@
 const router = require('express').Router()
+const User = require('./models/user')
 
-router.post('/login', (req, res) => {
-  res.send(
-    'this endpoint authenticates the user and returns access and refresh tokens'
-  )
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body
+    const user = await User.login(email, password)
+    return res.json(user)
+  } catch (err) {
+    if (err.message === 'incorrect email or password') {
+      return res.status(401).send(err.message)
+    }
+    return res.status(500).send('something went wrong')
+  }
 })
 
-router.post('/register', (req, res) => {
-  res.send(
-    'this endpoint creates a user record in the database and returns access and refresh tokens'
-  )
+router.post('/register', async (req, res) => {
+  try {
+    const user = await User.create(req.body)
+    return res.status(201).json(user)
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).send('user already exists')
+    }
+    return res.status(500).send('something went wrong')
+  }
 })
 
 router.post('/token', (req, res) => {
