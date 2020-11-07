@@ -1,7 +1,8 @@
 const router = require('express').Router()
 const User = require('./models/user')
+const validateUserBody = require('./middleware/validateUserBody')
 
-router.post('/login', async (req, res) => {
+router.post('/login', validateUserBody, async (req, res) => {
   try {
     const { email, password } = req.body
     const user = await User.login(email, password)
@@ -14,7 +15,7 @@ router.post('/login', async (req, res) => {
   }
 })
 
-router.post('/register', async (req, res) => {
+router.post('/register', validateUserBody, async (req, res) => {
   try {
     const user = await User.create(req.body)
     return res.status(201).json(user)
@@ -22,7 +23,7 @@ router.post('/register', async (req, res) => {
     if (err.code === 11000) {
       return res.status(409).send('user already exists')
     }
-    return res.status(500).send('something went wrong')
+    return res.status(500).send('something went wrong')``
   }
 })
 
