@@ -67,10 +67,19 @@ router.post('/token', async (req, res) => {
   }
 })
 
-router.post('/logout', (req, res) => {
-  res.send(
-    'this endpoint destroys the refresh token session of the user in the cache'
-  )
+router.post('/logout', async (req, res) => {
+  try {
+    const { refreshToken } = req.cookies
+    if (!refreshToken) return res.status(401).send('no refresh token')
+    const found = await store.checkRefreshToken(refreshToken)
+    if (found) {
+      await store.deleteRefreshToken(refreshToken)
+      return res.json({ user: 'logged out' })
+    }
+    return res.status(403).send('invalid refresh token')
+  } catch (err) {
+    return res.status(500).json({ error: err.message })
+  }
 })
 
 module.exports = router
