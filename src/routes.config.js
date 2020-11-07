@@ -1,11 +1,21 @@
 const router = require('express').Router()
 const User = require('./models/user')
 const validateUserBody = require('./middleware/validateUserBody')
+const token = require('./utils/token')
+
+const isSecure = process.env.NODE_ENV === 'production'
 
 router.post('/login', validateUserBody, async (req, res) => {
   try {
     const { email, password } = req.body
     const user = await User.login(email, password)
+    const accessToken = token.createAccessToken(user.id)
+    const refreshToken = token.createRefreshToken(user.id)
+    res.cookie('accessToken', accessToken, { secure: isSecure, httpOnly: true })
+    res.cookie('refreshToken', refreshToken, {
+      secure: isSecure,
+      httpOnly: true,
+    })
     return res.json(user)
   } catch (err) {
     if (err.message === 'incorrect email or password') {
@@ -18,6 +28,13 @@ router.post('/login', validateUserBody, async (req, res) => {
 router.post('/register', validateUserBody, async (req, res) => {
   try {
     const user = await User.create(req.body)
+    const accessToken = token.createAccessToken(user.id)
+    const refreshToken = token.createRefreshToken(user.id)
+    res.cookie('accessToken', accessToken, { secure: isSecure, httpOnly: true })
+    res.cookie('refreshToken', refreshToken, {
+      secure: isSecure,
+      httpOnly: true,
+    })
     return res.status(201).json(user)
   } catch (err) {
     if (err.code === 11000) {
