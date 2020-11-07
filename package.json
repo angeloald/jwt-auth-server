@@ -18,7 +18,8 @@
     "argon2": "^0.27.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.10.13"
+    "mongoose": "^5.10.13",
+    "pino": "^6.7.0"
   },
   "devDependencies": {
     "eslint": "^7.13.0",
@@ -26,6 +27,7 @@
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.1.4",
+    "pino-pretty": "^4.3.0",
     "prettier": "^2.1.2"
   }
 }
