@@ -47,10 +47,24 @@ router.post('/register', validateUserBody, async (req, res) => {
   }
 })
 
-router.post('/token', (req, res) => {
-  res.send(
-    'this endpoint generates a new access token from the user if they supply a valid refresh token'
-  )
+router.post('/token', async (req, res) => {
+  try {
+    const { refreshToken } = req.cookies
+    if (!refreshToken) return res.status(401).send('no refresh token')
+    const found = await store.checkRefreshToken(refreshToken)
+    if (found) {
+      const tokenData = token.validateRefreshToken(refreshToken)
+      const accessToken = token.createAccessToken(tokenData.id)
+      res.cookie('accessToken', accessToken, {
+        secure: isSecure,
+        httpOnly: true,
+      })
+      return res.json(tokenData)
+    }
+    return res.status(403).send('invalid refresh token')
+  } catch (err) {
+    return res.status(500).json({ error: err.message })
+  }
 })
 
 router.post('/logout', (req, res) => {
