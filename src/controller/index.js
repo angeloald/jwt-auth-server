@@ -5,18 +5,22 @@ const clientErrors = require('../utils/clientErrors')
 
 const isSecure = process.env.NODE_ENV === 'production'
 
+const setTokens = async (res, userId) => {
+  const accessToken = token.createAccessToken(userId)
+  const refreshToken = token.createRefreshToken(userId)
+  res.cookie('accessToken', accessToken, { secure: isSecure, httpOnly: true })
+  res.cookie('refreshToken', refreshToken, {
+    secure: isSecure,
+    httpOnly: true,
+  })
+  await store.setRefreshToken(refreshToken)
+}
+
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body
     const user = await User.login(email, password)
-    const accessToken = token.createAccessToken(user.id)
-    const refreshToken = token.createRefreshToken(user.id)
-    res.cookie('accessToken', accessToken, { secure: isSecure, httpOnly: true })
-    res.cookie('refreshToken', refreshToken, {
-      secure: isSecure,
-      httpOnly: true,
-    })
-    await store.setRefreshToken(refreshToken)
+    await setTokens(res, user.id)
     return res.json(user)
   } catch (err) {
     return next(err)
@@ -26,14 +30,7 @@ const login = async (req, res, next) => {
 const register = async (req, res, next) => {
   try {
     const user = await User.create(req.body)
-    const accessToken = token.createAccessToken(user.id)
-    const refreshToken = token.createRefreshToken(user.id)
-    res.cookie('accessToken', accessToken, { secure: isSecure, httpOnly: true })
-    res.cookie('refreshToken', refreshToken, {
-      secure: isSecure,
-      httpOnly: true,
-    })
-    await store.setRefreshToken(refreshToken)
+    await setTokens(res, user.id)
     return res.status(201).json(user)
   } catch (err) {
     return next(err)
