@@ -4,7 +4,7 @@ const { UnprocessibleEntry } = require('../utils/clientErrors')
 const validateUserBody = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email().required(),
-    password: Joi.string().required(),
+    password: Joi.string().min(6).required(),
   })
 
   const { error } = schema.validate(req.body)
