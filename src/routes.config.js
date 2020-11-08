@@ -3,10 +3,12 @@ const User = require('./models/user')
 const validateUserBody = require('./middleware/validateUserBody')
 const token = require('./utils/token')
 const store = require('./utils/store')
+const handleErrors = require('./middleware/handleErrors')
+const clientErrors = require('./utils/clientErrors')
 
 const isSecure = process.env.NODE_ENV === 'production'
 
-router.post('/login', validateUserBody, async (req, res) => {
+router.post('/login', validateUserBody, async (req, res, next) => {
   try {
     const { email, password } = req.body
     const user = await User.login(email, password)
@@ -20,14 +22,11 @@ router.post('/login', validateUserBody, async (req, res) => {
     await store.setRefreshToken(refreshToken)
     return res.json(user)
   } catch (err) {
-    if (err.message === 'incorrect email or password') {
-      return res.status(401).send(err.message)
-    }
-    return res.status(500).send('something went wrong')
+    return next(err)
   }
 })
 
-router.post('/register', validateUserBody, async (req, res) => {
+router.post('/register', validateUserBody, async (req, res, next) => {
   try {
     const user = await User.create(req.body)
     const accessToken = token.createAccessToken(user.id)
@@ -40,17 +39,14 @@ router.post('/register', validateUserBody, async (req, res) => {
     await store.setRefreshToken(refreshToken)
     return res.status(201).json(user)
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).send('user already exists')
-    }
-    return res.status(500).send('something went wrong')``
+    return next(err)
   }
 })
 
-router.post('/token', async (req, res) => {
+router.post('/token', async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies
-    if (!refreshToken) return res.status(401).send('no refresh token')
+    if (!refreshToken) throw clientErrors.Unauthorized('no refresh token')
     const found = await store.checkRefreshToken(refreshToken)
     if (found) {
       const tokenData = token.validateRefreshToken(refreshToken)
@@ -61,25 +57,27 @@ router.post('/token', async (req, res) => {
       })
       return res.json(tokenData)
     }
-    return res.status(403).send('invalid refresh token')
+    throw clientErrors.Forbidden('invalid refresh token')
   } catch (err) {
-    return res.status(500).json({ error: err.message })
+    return next(err)
   }
 })
 
-router.post('/logout', async (req, res) => {
+router.post('/logout', async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies
-    if (!refreshToken) return res.status(401).send('no refresh token')
+    if (!refreshToken) throw clientErrors.Unauthorized('no refresh token')
     const found = await store.checkRefreshToken(refreshToken)
     if (found) {
       await store.deleteRefreshToken(refreshToken)
       return res.json({ user: 'logged out' })
     }
-    return res.status(403).send('invalid refresh token')
+    throw clientErrors.Forbidden('invalid refresh token')
   } catch (err) {
-    return res.status(500).json({ error: err.message })
+    return next(err)
   }
 })
+
+router.use('/', handleErrors)
 
 module.exports = router
