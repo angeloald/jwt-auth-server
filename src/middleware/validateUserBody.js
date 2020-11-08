@@ -1,4 +1,5 @@
 const Joi = require('joi')
+const { UnprocessibleEntry } = require('../utils/clientErrors')
 
 const validateUserBody = (req, res, next) => {
   const schema = Joi.object({
@@ -9,9 +10,7 @@ const validateUserBody = (req, res, next) => {
   const { error } = schema.validate(req.body)
   if (error) {
     const { details } = error
-    return res
-      .status(422)
-      .json({ error: details.map((err) => err.message).join(',') })
+    throw UnprocessibleEntry(details.map((err) => err.message).join(','))
   }
   return next()
 }

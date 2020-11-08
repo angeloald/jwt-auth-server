@@ -2,6 +2,7 @@
 
 const mongoose = require('mongoose')
 const argon2 = require('argon2')
+const clientErrors = require('../utils/clientErrors')
 
 const UserSchema = new mongoose.Schema({
   email: {
@@ -28,7 +29,7 @@ UserSchema.statics.login = async function (email, password) {
     const isUser = await argon2.verify(user.password, password)
     if (isUser) return user
   }
-  throw Error('incorrect email or password')
+  throw clientErrors.Unauthorized('incorrect email or password')
 }
 
 module.exports = mongoose.model('User', UserSchema)
